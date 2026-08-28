@@ -1,0 +1,905 @@
+<title>Outjumper</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Archivo:wght@600;800&display=swap">
+<style>
+  /* Deliberate single-theme design: a night chase. All colors explicit. */
+  :root {
+    --page: #0b0e14;
+    --card: #131722;
+    --card-2: #0f131c;
+    --border: rgba(255, 255, 255, 0.09);
+    --ink: #f2f4f8;
+    --ink-2: #b9bfcc;
+    --muted: #7c8494;
+    --grid: #262c3a;
+    --accent: #3987e5;
+    --flat: #3987e5;
+    /* flat-run series */
+    --jump: #d95926;
+    /* jumping series */
+    --proj: #e87ba4;
+    /* projectile */
+    --good: #0ca30c;
+    --crit: #e05252;
+  }
+
+  * {
+    box-sizing: border-box;
+  }
+
+  body {
+    background: var(--page);
+    color: var(--ink);
+    font-family: system-ui, -apple-system, "Segoe UI", sans-serif;
+    font-size: 15.5px;
+    line-height: 1.5;
+    margin: 0;
+    padding: 34px 16px 70px;
+  }
+
+  .wrap {
+    max-width: 980px;
+    margin: 0 auto;
+  }
+
+  h1 {
+    font-family: "Archivo", system-ui, sans-serif;
+    font-weight: 800;
+    font-size: clamp(26px, 4.5vw, 38px);
+    letter-spacing: -0.01em;
+    margin: 6px 0 6px;
+    text-wrap: balance;
+  }
+
+  .eyebrow {
+    font-size: 11.5px;
+    font-weight: 600;
+    letter-spacing: 0.16em;
+    text-transform: uppercase;
+    color: var(--muted);
+    margin: 0;
+  }
+
+  .dek {
+    color: var(--ink-2);
+    max-width: 66ch;
+    margin: 0 0 20px;
+  }
+
+  .mono {
+    font-family: ui-monospace, "Cascadia Mono", Menlo, Consolas, monospace;
+    font-variant-numeric: tabular-nums;
+  }
+
+  /* controls */
+  .controls {
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    padding: 16px 18px 14px;
+    margin-bottom: 14px;
+    display: flex;
+    flex-wrap: wrap;
+    gap: 16px 28px;
+    align-items: flex-end;
+  }
+
+  .ctl {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+  }
+
+  .ctl label {
+    font-size: 11.5px;
+    font-weight: 600;
+    letter-spacing: 0.09em;
+    text-transform: uppercase;
+    color: var(--muted);
+  }
+
+  .ctl .row {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+  }
+
+  input[type=range] {
+    width: 150px;
+    accent-color: var(--accent);
+  }
+
+  .val {
+    min-width: 52px;
+    font-weight: 650;
+  }
+
+  select,
+  input[type=number] {
+    background: var(--card-2);
+    color: var(--ink);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 7px 10px;
+    font-size: 14px;
+    font-family: inherit;
+  }
+
+  input[type=number] {
+    width: 84px;
+  }
+
+  .seg {
+    display: inline-flex;
+    background: var(--card-2);
+    border: 1px solid var(--border);
+    border-radius: 9px;
+    overflow: hidden;
+  }
+
+  .seg button {
+    background: none;
+    border: 0;
+    color: var(--ink-2);
+    padding: 7px 13px;
+    font-size: 13.5px;
+    cursor: pointer;
+    font-family: inherit;
+  }
+
+  .seg button+button {
+    border-left: 1px solid var(--border);
+  }
+
+  .seg button.on {
+    background: var(--accent);
+    color: #fff;
+    font-weight: 600;
+  }
+
+  .btn {
+    background: var(--accent);
+    color: #fff;
+    border: 0;
+    border-radius: 9px;
+    padding: 9px 18px;
+    font-size: 14.5px;
+    font-weight: 650;
+    cursor: pointer;
+    font-family: inherit;
+  }
+
+  .btn.ghost {
+    background: var(--card-2);
+    color: var(--ink-2);
+    border: 1px solid var(--border);
+  }
+
+  .btn:focus-visible,
+  .seg button:focus-visible {
+    outline: 2px solid var(--accent);
+    outline-offset: 2px;
+  }
+
+  .derived {
+    width: 100%;
+    color: var(--muted);
+    font-size: 13px;
+    margin-top: -4px;
+  }
+
+  /* sim panels */
+  .panel {
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    padding: 14px 16px 12px;
+    margin: 12px 0;
+    position: relative;
+  }
+
+  .panel h2 {
+    font-family: "Archivo", system-ui, sans-serif;
+    font-weight: 600;
+    font-size: 15.5px;
+    margin: 0 0 8px;
+    display: flex;
+    align-items: center;
+    gap: 9px;
+  }
+
+  .panel h2 .dot {
+    width: 10px;
+    height: 10px;
+    border-radius: 50%;
+  }
+
+  .scene-holder {
+    position: relative;
+  }
+
+  canvas.scene {
+    display: block;
+    width: 100%;
+    border-radius: 8px;
+    background: var(--card-2);
+  }
+
+  .badge {
+    position: absolute;
+    top: 10px;
+    right: 10px;
+    display: none;
+    font-family: "Archivo", system-ui, sans-serif;
+    font-weight: 800;
+    font-size: 15px;
+    padding: 6px 14px;
+    border-radius: 8px;
+    letter-spacing: 0.03em;
+    color: #fff;
+  }
+
+  .badge.caught {
+    background: var(--crit);
+    display: block;
+  }
+
+  .badge.escaped {
+    background: var(--good);
+    display: block;
+  }
+
+  .stats {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 4px 26px;
+    margin-top: 9px;
+    font-size: 13.5px;
+    color: var(--ink-2);
+  }
+
+  .stats b {
+    color: var(--ink);
+    font-weight: 650;
+  }
+
+  /* gap chart */
+  .chartcard {
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    padding: 14px 16px 10px;
+    margin: 12px 0;
+  }
+
+  .chartcard h2 {
+    font-family: "Archivo", system-ui, sans-serif;
+    font-weight: 600;
+    font-size: 15.5px;
+    margin: 0 0 2px;
+  }
+
+  .chartcard .cap {
+    font-size: 12.5px;
+    color: var(--muted);
+    margin: 0 0 8px;
+  }
+
+  .legend {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px 18px;
+    margin: 2px 0 8px;
+    font-size: 12.5px;
+    color: var(--ink-2);
+  }
+
+  .legend .key {
+    display: inline-flex;
+    align-items: center;
+    gap: 7px;
+  }
+
+  .legend .sw {
+    width: 18px;
+    height: 0;
+    border-top: 3px solid;
+    border-radius: 2px;
+  }
+
+  .legend .sw.dash {
+    border-top-style: dashed;
+    border-top-width: 2px;
+  }
+
+  canvas#gapchart {
+    display: block;
+    width: 100%;
+  }
+
+  .fine {
+    font-size: 12.5px;
+    color: var(--muted);
+    max-width: 78ch;
+    margin-top: 26px;
+  }
+
+  .fine b {
+    color: var(--ink-2);
+  }
+</style>
+
+<div class="wrap">
+  <p class="eyebrow">Flyff Universe · projectile chase, simulated frame-by-frame</p>
+  <h1>Can you outrun the bomb?</h1>
+  <p class="dek">
+    The projectile homes on your position every frame at a fixed 3D speed — it cuts
+    under your jump arc instead of following it — and despawns after 10 seconds.
+    Both runs below use identical speed; the only difference is jumping. Watch the
+    pink pursuit curve.
+  </p>
+
+  <div class="controls" id="controls">
+    <div class="ctl">
+      <label for="spd">Your speed</label>
+      <div class="row">
+        <input type="range" id="spd" min="100" max="300" step="1" value="150">
+        <span class="val mono" id="spdval">150%</span>
+      </div>
+    </div>
+    <div class="ctl">
+      <label>Scroll</label>
+      <div class="seg" id="scroll">
+        <button data-v="none" class="on">None</button>
+        <button data-v="jump">Jumping</button>
+        <button data-v="velo">Velocity</button>
+      </div>
+    </div>
+    <div class="ctl">
+      <label for="proj">Projectile</label>
+      <div class="row">
+        <select id="proj">
+          <option value="0.2">Psychic Bomb — 0.20</option>
+          <option value="0.24" selected>Spirit Bomb — 0.24</option>
+          <option value="0.3024">Spirit Bomb +26% — 0.3024</option>
+          <option value="0.7">Fast arrow — 0.70</option>
+          <option value="custom">Custom…</option>
+        </select>
+        <input type="number" id="projcustom" min="0.05" max="1" step="0.005" value="0.24" style="display:none"
+          aria-label="Custom projectile speed, units per frame">
+      </div>
+    </div>
+    <div class="ctl">
+      <label for="dist">Head start</label>
+      <div class="row">
+        <input type="range" id="dist" min="5" max="15" step="1" value="15">
+        <span class="val mono" id="distval">15 u</span>
+      </div>
+    </div>
+    <div class="ctl">
+      <label>Playback</label>
+      <div class="seg" id="pace">
+        <button data-v="1" class="on">1×</button>
+        <button data-v="2">2×</button>
+        <button data-v="4">4×</button>
+      </div>
+    </div>
+    <div class="ctl">
+      <label>&nbsp;</label>
+      <div class="row">
+        <button class="btn" id="restart">Restart</button>
+        <button class="btn ghost" id="pause">Pause</button>
+      </div>
+    </div>
+    <div class="derived mono" id="derived"></div>
+  </div>
+
+  <div class="panel">
+    <h2><span class="dot" style="background:var(--flat)"></span>Running flat</h2>
+    <div class="scene-holder">
+      <canvas class="scene" id="scene0"></canvas>
+      <div class="badge" id="badge0"></div>
+    </div>
+    <div class="stats" id="stats0"></div>
+  </div>
+
+  <div class="panel">
+    <h2><span class="dot" style="background:var(--jump)"></span>Chain-jumping <span
+        style="font-weight:400;color:var(--muted);font-size:13px;" id="jumpinfo"></span></h2>
+    <div class="scene-holder">
+      <canvas class="scene" id="scene1"></canvas>
+      <div class="badge" id="badge1"></div>
+    </div>
+    <div class="stats" id="stats1"></div>
+  </div>
+
+  <div class="chartcard">
+    <h2>Gap between you and the projectile</h2>
+    <p class="cap">Sawtooth on the orange line = the projectile catches up while you fall, loses ground while you rise.
+    </p>
+    <div class="legend">
+      <span class="key"><span class="sw" style="border-color:var(--flat)"></span>Running flat</span>
+      <span class="key"><span class="sw" style="border-color:var(--jump)"></span>Chain-jumping</span>
+      <span class="key"><span class="sw dash" style="border-color:var(--muted)"></span>Hit radius (1 u)</span>
+    </div>
+    <canvas id="gapchart"></canvas>
+  </div>
+
+  <p class="fine">
+    <b>The model:</b> everything in world units per client frame at 60 fps (×60 for units/sec).
+    Base run speed 0.116 · jump = instant +0.2 vertical velocity · gravity −0.005 per frame ·
+    terminal fall 0.5. Scroll of Velocity: +30 speed points, jump height 175%. Scroll of Jumping:
+    150%. Projectile speeds are hardcoded in the client, and projectiles despawn after 10 s — outliving
+    the bomb counts as escaping. It re-aims at your position every frame (pure pursuit) and hits
+    within 1 u (assumed; simulated). Jump chains re-launch the frame you land.
+  </p>
+</div>
+
+<script>
+  (function () {
+    "use strict";
+
+    /* ── constants (world units per client frame, 60 fps) ── */
+    var G = 0.005;
+    var BASE = 0.116;
+    var JUMP_V = 0.2;
+    var FPS = 60;
+    var HIT_R = 1.0;
+    var LIFETIME = 10 * FPS;     // projectiles despawn after 10 s (live-observed)
+    var ESCAPE_MARGIN = 15;      // gap ≥ head start + this → early "escaped"
+
+    var css = getComputedStyle(document.documentElement);
+    var C = {
+      flat: css.getPropertyValue("--flat").trim(),
+      jump: css.getPropertyValue("--jump").trim(),
+      proj: css.getPropertyValue("--proj").trim(),
+      ink2: css.getPropertyValue("--ink-2").trim(),
+      muted: css.getPropertyValue("--muted").trim(),
+      grid: css.getPropertyValue("--grid").trim(),
+      good: css.getPropertyValue("--good").trim(),
+      crit: css.getPropertyValue("--crit").trim(),
+      card2: css.getPropertyValue("--card-2").trim()
+    };
+
+    /* ── one chase run ── */
+    function Chase(vx, vy0, s, d0) {
+      this.vx = vx; this.vy0 = vy0; this.s = s; this.d0 = d0;
+      this.T = vy0 > 0 ? 2 * vy0 / G : 0;
+      this.f = 0;
+      this.tx = 0; this.ty = 0;
+      this.px = -d0; this.py = 0.9;
+      this.path3d = 0;
+      this.minGap = d0;
+      this.gaps = [d0];
+      this.trailT = [];
+      this.trailP = [];
+      this.done = false;
+      this.verdict = "";
+    }
+
+    Chase.prototype.height = function (f) {
+      var out = 0;
+
+      if (this.vy0 > 0) {
+        var tau = f % this.T;
+        out = Math.max(0, this.vy0 * tau - (G / 2) * tau * tau);
+      }
+      return out;
+    };
+
+    Chase.prototype.step = function () {
+      if (this.done) {
+        return;
+      }
+      this.f++;
+      var pty = this.ty;
+      this.tx = this.vx * this.f;
+      this.ty = this.height(this.f);
+      this.path3d += Math.hypot(this.vx, this.ty - pty);
+
+      // aim at body center; pure pursuit at fixed speed
+      var ax = this.tx, ay = this.ty + 0.9;
+      var dx = ax - this.px, dy = ay - this.py;
+      var dist = Math.hypot(dx, dy);
+
+      if (dist <= Math.max(this.s, HIT_R)) {
+        this.done = true;
+        this.verdict = "caught";
+      } else {
+        this.px += this.s * dx / dist;
+        this.py += this.s * dy / dist;
+        dist = Math.hypot(ax - this.px, ay - this.py);
+      }
+      if (dist < this.minGap) {
+        this.minGap = dist;
+      }
+      this.gaps.push(dist);
+      this.trailT.push(this.tx, this.ty);
+      this.trailP.push(this.px, this.py);
+
+      if (this.trailT.length > 720) {
+        this.trailT.splice(0, 2);
+        this.trailP.splice(0, 2);
+      }
+      if (!this.done) {
+        if (dist >= this.d0 + ESCAPE_MARGIN) {
+          this.done = true;
+          this.verdict = "escaped";
+        } else if (this.f >= LIFETIME) {
+          this.done = true;
+          this.verdict = "expired";
+        }
+      }
+    };
+
+    /* ── scene rendering (axonometric: x right, y up, z recedes up-right) ── */
+    var DZX = 0.55, DZY = 0.26;
+
+    function drawScene(cv, run, accent) {
+      var ctx = cv.getContext("2d");
+      var W = cv.clientWidth, H = cv.clientHeight;
+      var dpr = window.devicePixelRatio || 1;
+
+      if (cv.width !== Math.round(W * dpr)) {
+        cv.width = Math.round(W * dpr);
+        cv.height = Math.round(H * dpr);
+      }
+      ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+      ctx.clearRect(0, 0, W, H);
+
+      var apex = run.vy0 > 0 ? run.vy0 * run.vy0 / (2 * G) : 0;
+      var S = (H - 66) / Math.max(apex + 4.5, 11);
+      var groundY = H - 26;
+      var camx = run.tx - (W / S) * 0.52;
+      var X = function (x) { return (x - camx) * S; };
+      var Y = function (y) { return groundY - y * S; };
+      var zmax = Math.min(14, 70 / (DZY * S));
+
+      // ground plane
+      ctx.fillStyle = "rgba(255,255,255,0.028)";
+      ctx.beginPath();
+      ctx.moveTo(0, groundY);
+      ctx.lineTo(W, groundY);
+      ctx.lineTo(W, groundY - zmax * DZY * S);
+      ctx.lineTo(0, groundY - zmax * DZY * S);
+      ctx.fill();
+
+      // depth lines (constant z)
+      ctx.lineWidth = 1;
+      for (var z = 0; z <= zmax; z += 3.5) {
+        var t = z / zmax;
+        ctx.strokeStyle = "rgba(124,132,148," + (0.26 - 0.18 * t).toFixed(3) + ")";
+        ctx.beginPath();
+        ctx.moveTo(0, groundY - z * DZY * S);
+        ctx.lineTo(W, groundY - z * DZY * S);
+        ctx.stroke();
+      }
+      // cross lines (constant x), scrolling with camera
+      var step = 5;
+      var x0 = Math.floor(camx / step) * step;
+      for (var gx = x0; gx < camx + W / S + zmax; gx += step) {
+        ctx.strokeStyle = "rgba(124,132,148,0.14)";
+        ctx.beginPath();
+        ctx.moveTo(X(gx), groundY);
+        ctx.lineTo(X(gx) + zmax * DZX * S * 0.35, groundY - zmax * DZY * S);
+        ctx.stroke();
+        // distance tick every 25u
+        if (gx % 25 === 0) {
+          ctx.fillStyle = "rgba(124,132,148,0.55)";
+          ctx.font = "10.5px ui-monospace, Menlo, monospace";
+          ctx.fillText(gx + "u", X(gx) + 3, groundY + 14);
+        }
+      }
+
+      // trails
+      function trail(arr, color, width) {
+        var n = arr.length / 2;
+
+        if (n < 2) {
+          return;
+        }
+        ctx.lineWidth = width;
+        ctx.lineJoin = "round";
+
+        for (var i = 1; i < n; i++) {
+          ctx.strokeStyle = color;
+          ctx.globalAlpha = 0.05 + 0.5 * (i / n);
+          ctx.beginPath();
+          ctx.moveTo(X(arr[2 * i - 2]), Y(arr[2 * i - 1]));
+          ctx.lineTo(X(arr[2 * i]), Y(arr[2 * i + 1]));
+          ctx.stroke();
+        }
+        ctx.globalAlpha = 1;
+      }
+      trail(run.trailT, accent, 2);
+      trail(run.trailP, C.proj, 2);
+
+      // shadows
+      function shadow(x, h, r) {
+        var a = Math.max(0.06, 0.32 - h * 0.01);
+        ctx.fillStyle = "rgba(0,0,0," + a.toFixed(3) + ")";
+        ctx.beginPath();
+        ctx.ellipse(X(x), groundY, r * S, r * S * 0.32, 0, 0, Math.PI * 2);
+        ctx.fill();
+      }
+      shadow(run.tx, run.ty, 0.65);
+      shadow(run.px, run.py, 0.45);
+
+      // projectile: glowing orb
+      var ppx = X(run.px), ppy = Y(run.py);
+      var pr = Math.max(4, 0.55 * S);
+      var glow = ctx.createRadialGradient(ppx, ppy, 0, ppx, ppy, pr * 3);
+      glow.addColorStop(0, "rgba(232,123,164,0.65)");
+      glow.addColorStop(1, "rgba(232,123,164,0)");
+      ctx.fillStyle = glow;
+      ctx.beginPath(); ctx.arc(ppx, ppy, pr * 3, 0, Math.PI * 2); ctx.fill();
+      ctx.fillStyle = C.proj;
+      ctx.beginPath(); ctx.arc(ppx, ppy, pr, 0, Math.PI * 2); ctx.fill();
+      ctx.fillStyle = "#fff";
+      ctx.beginPath(); ctx.arc(ppx, ppy, pr * 0.4, 0, Math.PI * 2); ctx.fill();
+
+      // runner: capsule standing at (tx, ty)
+      var rx = X(run.tx), rfoot = Y(run.ty);
+      var bw = Math.max(5, 0.7 * S), bh = Math.max(11, 1.7 * S);
+      ctx.fillStyle = accent;
+      ctx.beginPath();
+
+      if (ctx.roundRect) {
+        ctx.roundRect(rx - bw / 2, rfoot - bh, bw, bh, bw / 2);
+      } else {
+        ctx.rect(rx - bw / 2, rfoot - bh, bw, bh);
+      }
+      ctx.fill();
+      ctx.fillStyle = "rgba(255,255,255,0.85)";
+      ctx.beginPath();
+      ctx.arc(rx, rfoot - bh + bw * 0.55, bw * 0.32, 0, Math.PI * 2);
+      ctx.fill();
+
+      // caught flash
+      if (run.verdict === "caught") {
+        ctx.fillStyle = "rgba(224,82,82,0.16)";
+        ctx.fillRect(0, 0, W, H);
+      }
+    }
+
+    /* ── gap chart ── */
+    function drawGapChart(cv, runs, d0) {
+      var ctx = cv.getContext("2d");
+      var W = cv.clientWidth, H = 190;
+      var dpr = window.devicePixelRatio || 1;
+
+      if (cv.width !== Math.round(W * dpr)) {
+        cv.width = Math.round(W * dpr);
+        cv.height = Math.round(H * dpr);
+        cv.style.height = H + "px";
+      }
+      ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+      ctx.clearRect(0, 0, W, H);
+
+      var m = { l: 34, r: 14, t: 8, b: 22 };
+      var pw = W - m.l - m.r, ph = H - m.t - m.b;
+      var tmaxF = Math.max(10 * FPS, runs[0].gaps.length, runs[1].gaps.length);
+      var gmax = Math.max(d0 + 6, d0 + ESCAPE_MARGIN * 0.4);
+
+      for (var i = 0; i < 2; i++) {
+        gmax = Math.max(gmax, Math.max.apply(null, runs[i].gaps.length > 1 ? runs[i].gaps : [d0]) + 2);
+      }
+      var sx = function (f) { return m.l + (f / tmaxF) * pw; };
+      var sy = function (g) { return m.t + ph - (g / gmax) * ph; };
+
+      // grid
+      var gstep = gmax > 24 ? 10 : 5;
+      ctx.font = "10.5px ui-monospace, Menlo, monospace";
+
+      for (var gy = 0; gy <= gmax; gy += gstep) {
+        ctx.strokeStyle = gy === 0 ? "rgba(124,132,148,0.4)" : "rgba(124,132,148,0.14)";
+        ctx.beginPath();
+        ctx.moveTo(m.l, sy(gy)); ctx.lineTo(m.l + pw, sy(gy));
+        ctx.stroke();
+        ctx.fillStyle = C.muted;
+        ctx.fillText(String(gy), m.l - 26, sy(gy) + 4);
+      }
+      for (var sec = 0; sec <= tmaxF / FPS; sec += 5) {
+        ctx.fillStyle = C.muted;
+        ctx.fillText(sec + "s", sx(sec * FPS) - 4, m.t + ph + 15);
+      }
+      // hit radius line
+      ctx.strokeStyle = C.muted;
+      ctx.setLineDash([5, 4]);
+      ctx.beginPath();
+      ctx.moveTo(m.l, sy(HIT_R)); ctx.lineTo(m.l + pw, sy(HIT_R));
+      ctx.stroke();
+      ctx.setLineDash([]);
+
+      // series
+      [C.flat, C.jump].forEach(function (color, i) {
+        var g = runs[i].gaps;
+        ctx.strokeStyle = color;
+        ctx.lineWidth = 2;
+        ctx.beginPath();
+        var stride = Math.max(1, Math.floor(g.length / pw));
+
+        for (var f = 0; f < g.length; f += stride) {
+          var x = sx(f), y = sy(g[f]);
+
+          if (f === 0) { ctx.moveTo(x, y); } else { ctx.lineTo(x, y); }
+        }
+        ctx.stroke();
+
+        if (runs[i].verdict === "caught") {
+          var lf = g.length - 1;
+          ctx.fillStyle = C.crit;
+          ctx.beginPath();
+          ctx.arc(sx(lf), sy(g[lf]), 4, 0, Math.PI * 2);
+          ctx.fill();
+        }
+      });
+    }
+
+    /* ── controls & loop ── */
+    var el = function (id) { return document.getElementById(id); };
+    var state = { scroll: "none", pace: 1, paused: false };
+    var runs = [null, null];
+    var scenes = [el("scene0"), el("scene1")];
+    var badges = [el("badge0"), el("badge1")];
+    var statsEls = [el("stats0"), el("stats1")];
+    var accents = [C.flat, C.jump];
+
+    function params() {
+      var pct = parseInt(el("spd").value, 10);
+      var jumpBonus = 0;
+
+      if (state.scroll === "jump") {
+        // display "Jump height: 150%" (assumed, unverified) → launch ×1.5
+        jumpBonus = 0.5;
+      } else if (state.scroll === "velo") {
+        // display "Jump height: 175%" (live-observed) → launch ×1.75; airtime ~2.33 s
+        jumpBonus = 0.75;
+        pct += 30;
+      }
+      var sSel = el("proj").value;
+      var s = sSel === "custom" ? (parseFloat(el("projcustom").value) || 0.24) : parseFloat(sSel);
+      s = Math.min(1, Math.max(0.05, s));
+      return {
+        vx: BASE * pct / 100,
+        vy0: JUMP_V * (1 + jumpBonus),
+        s: s,
+        d0: parseInt(el("dist").value, 10),
+        pct: pct,
+        gear: parseInt(el("spd").value, 10)
+      };
+    }
+
+    function restart() {
+      var p = params();
+      runs[0] = new Chase(p.vx, 0, p.s, p.d0);
+      runs[1] = new Chase(p.vx, p.vy0, p.s, p.d0);
+      badges.forEach(function (b) { b.className = "badge"; });
+      var speedTxt = p.pct + "%";
+
+      if (p.pct !== p.gear) {
+        speedTxt = p.gear + "% + 30% scroll = " + p.pct + "%";
+      }
+      el("derived").textContent =
+        "you: " + speedTxt + " → " + p.vx.toFixed(4) + "/frame (" + (p.vx * FPS).toFixed(1) + " u/s)" +
+        " · jump launch: " + p.vy0.toFixed(2) + "/frame (" + (p.vy0 * FPS).toFixed(0) + " u/s)" +
+        " · projectile: " + p.s.toFixed(4) + "/frame (" + (p.s * FPS).toFixed(1) + " u/s)";
+      el("jumpinfo").textContent =
+        "— apex " + (p.vy0 * p.vy0 / (2 * G)).toFixed(1) + " u, airtime " + (2 * p.vy0 / G / FPS).toFixed(2) + " s";
+    }
+
+    function verdictText(run) {
+      var out = "";
+
+      if (run.verdict === "caught") {
+        out = "CAUGHT " + (run.f / FPS).toFixed(1) + "s";
+      } else if (run.verdict === "escaped") {
+        out = "ESCAPED";
+      } else if (run.verdict === "expired") {
+        out = "BOMB EXPIRED";
+      }
+      return out;
+    }
+
+    function updatePanel(i) {
+      var run = runs[i];
+      var gap = run.gaps[run.gaps.length - 1];
+      var eff = run.f > 0 ? run.path3d / run.f : run.vx;
+      statsEls[i].innerHTML = "";
+      [["t", (run.f / FPS).toFixed(1) + " s"],
+      ["gap", gap.toFixed(1) + " u"],
+      ["closest", run.minGap.toFixed(1) + " u"],
+      ["your avg 3D speed", eff.toFixed(3) + "/frame (" + (eff / BASE * 100).toFixed(0) + "%)"]
+      ].forEach(function (kv) {
+        var span = document.createElement("span");
+        var b = document.createElement("b");
+        b.textContent = kv[1];
+        span.textContent = kv[0] + " ";
+        span.appendChild(b);
+        span.className = "mono";
+        statsEls[i].appendChild(span);
+      });
+
+      if (run.done) {
+        var cls = run.verdict === "caught" ? "caught" : "escaped";
+        badges[i].className = "badge " + cls;
+        badges[i].textContent = verdictText(run);
+      }
+    }
+
+    var last = 0, acc = 0;
+    function loop(ts) {
+      requestAnimationFrame(loop);
+
+      if (!last) {
+        last = ts;
+      }
+      var dt = Math.min(0.1, (ts - last) / 1000);
+      last = ts;
+
+      if (!state.paused) {
+        acc += dt * FPS * state.pace;
+
+        while (acc >= 1) {
+          acc -= 1;
+          runs[0].step();
+          runs[1].step();
+        }
+      }
+      for (var i = 0; i < 2; i++) {
+        drawScene(scenes[i], runs[i], accents[i]);
+        updatePanel(i);
+      }
+      drawGapChart(el("gapchart"), runs, runs[0].d0);
+    }
+
+    /* wire controls */
+    el("spd").addEventListener("input", function () {
+      el("spdval").textContent = el("spd").value + "%";
+      restart();
+    });
+    el("dist").addEventListener("input", function () {
+      el("distval").textContent = el("dist").value + " u";
+      restart();
+    });
+    el("proj").addEventListener("change", function () {
+      el("projcustom").style.display = el("proj").value === "custom" ? "" : "none";
+      restart();
+    });
+    el("projcustom").addEventListener("input", restart);
+    el("restart").addEventListener("click", restart);
+    el("pause").addEventListener("click", function () {
+      state.paused = !state.paused;
+      el("pause").textContent = state.paused ? "Resume" : "Pause";
+    });
+    [["scroll", "scroll"], ["pace", "pace"]].forEach(function (pair) {
+      var box = el(pair[0]);
+      box.addEventListener("click", function (ev) {
+        var btn = ev.target.closest("button");
+
+        if (!btn) {
+          return;
+        }
+        box.querySelectorAll("button").forEach(function (b) { b.classList.remove("on"); });
+        btn.classList.add("on");
+
+        if (pair[1] === "pace") {
+          state.pace = parseInt(btn.dataset.v, 10);
+        } else {
+          state[pair[1]] = btn.dataset.v;
+          restart();
+        }
+      });
+    });
+
+    // scene canvas heights
+    scenes.forEach(function (cv) { cv.style.height = "300px"; });
+
+    if (window.matchMedia("(prefers-reduced-motion: reduce)").matches) {
+      state.paused = true;
+      el("pause").textContent = "Resume";
+    }
+    restart();
+    requestAnimationFrame(loop);
+  })();
+</script>
